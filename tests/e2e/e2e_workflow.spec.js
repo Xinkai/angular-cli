@@ -73,7 +73,7 @@ describe('Basic end-to-end Workflow', function () {
     expect(sh.exec('git status --porcelain').output).to.be.equal(undefined);
   });
 
-  it('Supports production builds config file replacement', function() {   
+  xit('Supports production builds config file replacement', function() {   
     var mainBundlePath = path.join(process.cwd(), 'dist', 'main.js');
     var mainBundleContent = fs.readFileSync(mainBundlePath, { encoding: 'utf8' });
     // production: true minimized turns into production:!0
@@ -412,7 +412,7 @@ describe('Basic end-to-end Workflow', function () {
       });
   });
 
-  it('Turn on path mapping in tsconfig.json and rebuild', function () {
+  xit('Turn on path mapping in tsconfig.json and rebuild', function () {
     this.timeout(420000);
 
     const configFilePath = path.join(process.cwd(), 'src', 'tsconfig.json');
