@@ -20,7 +20,7 @@ export const getWebpackCommonConfig = function(projectRoot: string) {
       extensions: ['', '.ts', '.js'],
       root: path.resolve(projectRoot, './src'),
       plugins: [
-        new PathsPlugin(awesomeTypescriptLoaderConfig)
+        // new PathsPlugin(awesomeTypescriptLoaderConfig)
       ]
     },
     context: path.resolve(__dirname, './'),

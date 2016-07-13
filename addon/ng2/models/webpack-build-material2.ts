@@ -55,7 +55,7 @@ export const getWebpackMaterialConfig = function(projectRoot: string) {
       extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js', '.css', '.scss'],
 
       plugins: [
-        new PathsPlugin(awesomeTypescriptLoaderConfig)
+        // new PathsPlugin(awesomeTypescriptLoaderConfig)
       ]
       // alias: aliasMap
     },
