@@ -484,4 +484,114 @@ describe('Basic end-to-end Workflow', function () {
         throw new Error(msg);
       });
   });
+
+  it('Can create new project using `ng new test-mobile --mobile`', function () {
+    this.timeout(4200000);
+
+    return ng(['new', 'test-mobile', '--mobile', '--link-cli=true']).then(function () {
+      expect(existsSync(path.join(root, 'test-project')));
+    });
+  });
+
+  it('Can change current working directory to `test-mobile`', function () {
+    process.chdir(path.join(root, 'test-mobile'));
+    expect(path.basename(process.cwd())).to.equal('test-mobile');
+  });
+
+  it('Has mobile-only files', function () {
+    expect(existsSync(path.join(process.cwd(), 'app', 'main-app-shell.ts'))).to.be.equal(true);
+    expect(existsSync(path.join(process.cwd(), 'app', 'manifest.webapp'))).to.be.equal(true);
+  });
+
+  it('Supports production builds via `ng build -prod`', function() {
+    this.timeout(420000);
+
+    sh.exec(`${ngBin} build -prod`);
+    expect(existsSync(path.join(process.cwd(), 'dist'))).to.be.equal(true);
+    const indexHtml = fs.readFileSync(path.join(process.cwd(), 'dist/index.html'), 'utf-8');
+    // Check for cache busting hash script src
+    expect(indexHtml).to.match(/main\.[0-9a-f]{20}\.bundle\.js/);
+    expect(indexHtml).to.match(/sw-install\.[0-9a-f]{20}\.bundle\.js/);
+    // Also does not create new things in GIT.
+    expect(sh.exec('git status --porcelain').output).to.be.equal(undefined);
+  });
+
+  it('Can run `ng build` in created project', function () {
+    this.timeout(420000);
+
+    return ng(['build'])
+      .catch(() => {
+        throw new Error('Build failed.');
+      })
+      .then(function () {
+        expect(existsSync(path.join(process.cwd(), 'dist'))).to.be.equal(true);
+        // Check the index.html to have no handlebar tokens in it.
+        const indexHtml = fs.readFileSync(path.join(process.cwd(), 'dist/index.html'), 'utf-8');
+        expect(indexHtml).to.include('main.bundle.js');
+      })
+      .then(function () {
+        // Also does not create new things in GIT.
+        expect(sh.exec('git status --porcelain').output).to.be.equal(undefined);
+      });
+  });
+
+  it('lints', () => {
+    this.timeout(420000);
+
+    return ng(['lint']).then(() => {
+    })
+    .catch(err => {
+      throw new Error('Linting failed: ' + err);
+    });
+  });
+
+  it('Perform `ng test` after initial build', function () {
+    this.timeout(420000);
+
+    return ng(testArgs).then(function (result) {
+      const exitCode = typeof result === 'object' ? result.exitCode : result;
+      expect(exitCode).to.be.equal(0);
+    });
+  });
+
+  it('Serve and run e2e tests after initial build', function () {
+    this.timeout(240000);
+
+    var ngServePid;
+
+    function executor(resolve, reject) {
+      var serveProcess = child_process.exec(`${ngBin} serve`, {maxBuffer: 500*1024});
+      var startedProtractor = false;
+      ngServePid = serveProcess.pid;
+
+      serveProcess.stdout.on('data', (data) => {
+        if (/webpack: bundle is now VALID/.test(data.toString('utf-8')) && !startedProtractor) {
+          startedProtractor = true;
+          child_process.exec(`${ngBin} e2e`, (error, stdout, stderr) => {
+            if (error !== null) {
+              reject(stderr)
+            } else {
+              resolve();
+            }
+          });
+        }
+      });
+
+      serveProcess.stderr.on('data', (data) => {
+        reject(data);
+      });
+      serveProcess.on('close', (code) => {
+        code === 0 ? resolve() : reject('ng serve command closed with error')
+      });
+    }
+
+    return new Promise(executor)
+      .then(() => {
+        if (ngServePid) treeKill(ngServePid);
+      })
+      .catch((msg) => {
+        if (ngServePid) treeKill(ngServePid);
+        throw new Error(msg);
+      });
+  });
 });
